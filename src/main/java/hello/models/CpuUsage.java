@@ -5,6 +5,10 @@ public class CpuUsage {
     private String timestamp;
     private double cpu;
 
+    public CpuUsage(){
+
+    }
+
     public CpuUsage(int nodeID, String timestamp, double cpu) {
         this.nodeID = nodeID;
         this.timestamp = timestamp;
