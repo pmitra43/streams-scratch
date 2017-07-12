@@ -12,6 +12,7 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
+import org.apache.kafka.streams.kstream.Predicate;
 
 import java.util.Properties;
 
@@ -30,11 +31,15 @@ public class HelloKafkaStreams {
         Serde<String> stringSerde = Serdes.serdeFrom(stringSerializer, stringDeserializer);
         Serde<CpuUsage> cpuUsageSerde = Serdes.serdeFrom(cpuUsageSerializer, cpuUsageDeserializer);
 
+        Predicate<String, CpuUsage> normalPredicate = (k,cpu) -> cpu.getCpu() <= 80;
+        Predicate<String, CpuUsage> anomalyPredicate = (k,cpu) -> cpu.getCpu() > 80;
+
         KStreamBuilder builder = new KStreamBuilder();
 
-        KStream<String, CpuUsage> rawStream = builder.stream(stringSerde, cpuUsageSerde, "hardware-usage")
-                .filter((k, cpu) -> cpu.getCpu()>80.0);
-        rawStream.to(stringSerde, cpuUsageSerde, "anomaly-count");
+        KStream<String, CpuUsage>[] rawStream = builder.stream(stringSerde, cpuUsageSerde, "hardware-usage")
+                .branch(normalPredicate, anomalyPredicate);
+        rawStream[0].to(stringSerde, cpuUsageSerde, "normal-count");
+        rawStream[1].to(stringSerde, cpuUsageSerde, "anomaly-count");
         System.out.println("Starting Anomaly detection(rule based) Example");
 
         KafkaStreams kafkaStreams = new KafkaStreams(builder, settings);
