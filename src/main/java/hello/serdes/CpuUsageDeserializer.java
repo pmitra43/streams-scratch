@@ -7,7 +7,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 import java.io.IOException;
 import java.util.Map;
 
-public class CpuUsageDeserializer implements Deserializer {
+public class CpuUsageDeserializer implements Deserializer<CpuUsage> {
     @Override
     public void configure(Map map, boolean b) {
 

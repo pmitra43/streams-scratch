@@ -7,14 +7,14 @@ import org.apache.kafka.common.serialization.Serializer;
 
 import java.util.Map;
 
-public class CpuUsageSerializer implements Serializer {
+public class CpuUsageSerializer implements Serializer<CpuUsage> {
     @Override
     public void configure(Map map, boolean b) {
 
     }
 
     @Override
-    public byte[] serialize(String s, Object o) {
+    public byte[] serialize(String s, CpuUsage o) {
         byte[] retVal = null;
         ObjectMapper objectMapper = new ObjectMapper();
         try {
