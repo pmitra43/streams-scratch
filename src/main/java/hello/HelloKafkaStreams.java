@@ -1,18 +1,16 @@
 package hello;
 
+import hello.models.CpuAggregator;
 import hello.models.CpuUsage;
-import hello.serdes.CpuUsageDeserializer;
-import hello.serdes.CpuUsageSerializer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
+import serializer.JsonDeserializer;
+import serializer.JsonSerializer;
+import org.apache.kafka.common.serialization.*;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KStreamBuilder;
-import org.apache.kafka.streams.kstream.Predicate;
+import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.kstream.internals.WindowedDeserializer;
+import org.apache.kafka.streams.kstream.internals.WindowedSerializer;
 
 import java.util.Properties;
 
@@ -20,30 +18,57 @@ public class HelloKafkaStreams {
     public static void main(String[] args) {
         Properties settings = new Properties();
         settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "anomaly-kafka-streams");
+        settings.put(StreamsConfig.STATE_DIR_CONFIG, "streams-pipe");
         settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        settings.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        settings.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        settings.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 
-        CpuUsageSerializer cpuUsageSerializer = new CpuUsageSerializer();
-        CpuUsageDeserializer cpuUsageDeserializer = new CpuUsageDeserializer();
-        StringSerializer stringSerializer = new StringSerializer();
-        StringDeserializer stringDeserializer = new StringDeserializer();
+        Predicate<String, CpuUsage> normalPredicate = (k, cpu) -> cpu.getCpu() <= 80;
+        Predicate<String, CpuUsage> anomalyPredicate = (k, cpu) -> cpu.getCpu() > 80;
 
+        JsonSerializer<CpuUsage> cpuUsageJsonSerializer = new JsonSerializer<>();
+        JsonDeserializer<CpuUsage> cpuUsageJsonDeserializer = new JsonDeserializer<>(CpuUsage.class);
+        Serde<CpuUsage> cpuUsageSerde = Serdes.serdeFrom(cpuUsageJsonSerializer, cpuUsageJsonDeserializer);
+
+        WindowedSerializer<String> stringWindowedSerializer = new WindowedSerializer<>();
+        WindowedDeserializer<String> stringWindowedDeserializer = new WindowedDeserializer<>();
+        Serde<Windowed<String>> integerWindowedSerde = Serdes.serdeFrom(stringWindowedSerializer, stringWindowedDeserializer);
+
+        Serializer<String> stringSerializer = new JsonSerializer<>();
+        Deserializer<String> stringDeserializer = new JsonDeserializer<>(String.class);
         Serde<String> stringSerde = Serdes.serdeFrom(stringSerializer, stringDeserializer);
-        Serde<CpuUsage> cpuUsageSerde = Serdes.serdeFrom(cpuUsageSerializer, cpuUsageDeserializer);
-
-        Predicate<String, CpuUsage> normalPredicate = (k,cpu) -> cpu.getCpu() <= 80;
-        Predicate<String, CpuUsage> anomalyPredicate = (k,cpu) -> cpu.getCpu() > 80;
 
         KStreamBuilder builder = new KStreamBuilder();
 
-        KStream<String, CpuUsage>[] rawStream = builder.stream(stringSerde, cpuUsageSerde, "hardware-usage")
-                .branch(normalPredicate, anomalyPredicate);
-        rawStream[0].to(stringSerde, cpuUsageSerde, "normal-count");
-        rawStream[1].to(stringSerde, cpuUsageSerde, "anomaly-count");
+        KStream<String, CpuUsage> rawStream = builder.stream(stringSerde, cpuUsageSerde, "hardware-usage")
+                .map((k, v) -> KeyValue.pair(v.getNodeID(), v));
+
+        Serializer<CpuAggregator> cpuAggregatorSerializer = new JsonSerializer<>();
+        Deserializer<CpuAggregator> cpuAggregatorJsonDeserializer = new JsonDeserializer<>(CpuAggregator.class);
+        Serde<CpuAggregator> cpuAggregatorSerde = Serdes.serdeFrom(cpuAggregatorSerializer, cpuAggregatorJsonDeserializer);
+        KTable<Windowed<String>, CpuAggregator> aggregatedTable =
+                rawStream//.filter((k, v) -> v.getCpu() > 80)
+                        .groupBy((k, v) -> k, stringSerde, cpuUsageSerde)
+                        .aggregate(CpuAggregator::new, (k, v, cpuAggregator) -> cpuAggregator.add(v), TimeWindows.of(60 * 1000L), cpuAggregatorSerde, "AnomalyStore");
+
+        aggregatedTable.toStream()
+                .to(integerWindowedSerde, cpuAggregatorSerde, "all-alerts");
+        //.filter((k, v) -> v > 9)
+        //.to(integerWindowedSerde, Serdes.Long(), "alert-topic");
+
+        KStream<String, CpuUsage>[] diffStreams = rawStream.branch(anomalyPredicate, normalPredicate);
+
+        diffStreams[0].to(stringSerde, cpuUsageSerde, "anomaly-count");
+        diffStreams[1].to(stringSerde, cpuUsageSerde, "normal-count");
+
         System.out.println("Starting Anomaly detection(rule based) Example");
 
-        KafkaStreams kafkaStreams = new KafkaStreams(builder, settings);
+        final KafkaStreams kafkaStreams = new KafkaStreams(builder, settings);
+
+        kafkaStreams.cleanUp();
         kafkaStreams.start();
         System.out.println("Streaming started");
+
+        Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
     }
 }
