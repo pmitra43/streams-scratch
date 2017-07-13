@@ -51,10 +51,11 @@ public class HelloKafkaStreams {
                         .groupBy((k, v) -> k, stringSerde, cpuUsageSerde)
                         .aggregate(CpuAggregator::new, (k, v, cpuAggregator) -> cpuAggregator.add(v), TimeWindows.of(60 * 1000L), cpuAggregatorSerde, "AnomalyStore");
 
-        aggregatedTable.toStream()
-                .to(integerWindowedSerde, cpuAggregatorSerde, "all-alerts");
-        //.filter((k, v) -> v > 9)
-        //.to(integerWindowedSerde, Serdes.Long(), "alert-topic");
+        aggregatedTable.toStream((window, v) -> v.getNodeID())
+                .through(Serdes.String(), cpuAggregatorSerde, "all-alerts")
+        .filter((k, v) -> v.getCount() > 9)
+        .to(Serdes.String(), cpuAggregatorSerde, "actual-alert");
+        ;
 
         KStream<String, CpuUsage>[] diffStreams = rawStream.branch(anomalyPredicate, normalPredicate);
 

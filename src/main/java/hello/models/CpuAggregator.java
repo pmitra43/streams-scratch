@@ -1,8 +1,5 @@
 package hello.models;
 
-/**
- * Created by priyammitra on 7/13/17.
- */
 public class CpuAggregator {
     private String nodeID;
     private int count;
@@ -22,4 +19,11 @@ public class CpuAggregator {
         return this;
     }
 
+    public String getNodeID() {
+        return nodeID;
+    }
+
+    public int getCount() {
+        return count;
+    }
 }
