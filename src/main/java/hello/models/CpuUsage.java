@@ -1,7 +1,7 @@
 package hello.models;
 
 public class CpuUsage {
-    private int nodeID;
+    private String nodeID;
     private String timestamp;
     private double cpu;
 
@@ -9,17 +9,17 @@ public class CpuUsage {
 
     }
 
-    public CpuUsage(int nodeID, String timestamp, double cpu) {
+    public CpuUsage(String nodeID, String timestamp, double cpu) {
         this.nodeID = nodeID;
         this.timestamp = timestamp;
         this.cpu = cpu;
     }
 
-    public int getNodeID() {
+    public String getNodeID() {
         return nodeID;
     }
 
-    public void setNodeID(int nodeID) {
+    public void setNodeID(String nodeID) {
         this.nodeID = nodeID;
     }
 
