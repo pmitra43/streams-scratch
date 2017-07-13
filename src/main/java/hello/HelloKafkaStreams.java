@@ -20,8 +20,8 @@ public class HelloKafkaStreams {
         settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "anomaly-kafka-streams");
         settings.put(StreamsConfig.STATE_DIR_CONFIG, "streams-pipe");
         settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        settings.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-        settings.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 
         Predicate<String, CpuUsage> normalPredicate = (k, cpu) -> cpu.getCpu() <= 80;
         Predicate<String, CpuUsage> anomalyPredicate = (k, cpu) -> cpu.getCpu() > 80;
@@ -47,7 +47,7 @@ public class HelloKafkaStreams {
         Deserializer<CpuAggregator> cpuAggregatorJsonDeserializer = new JsonDeserializer<>(CpuAggregator.class);
         Serde<CpuAggregator> cpuAggregatorSerde = Serdes.serdeFrom(cpuAggregatorSerializer, cpuAggregatorJsonDeserializer);
         KTable<Windowed<String>, CpuAggregator> aggregatedTable =
-                rawStream//.filter((k, v) -> v.getCpu() > 80)
+                rawStream
                         .groupBy((k, v) -> k, stringSerde, cpuUsageSerde)
                         .aggregate(CpuAggregator::new, (k, v, cpuAggregator) -> cpuAggregator.add(v), TimeWindows.of(60 * 1000L), cpuAggregatorSerde, "AnomalyStore");
 
