@@ -38,7 +38,7 @@ public class HelloKafkaStreams {
 
         KStreamBuilder builder = new KStreamBuilder();
 
-        KStream<String, CpuUsage> sourceStream = builder.stream(stringSerde, cpuUsageSerde, "hardware-usage")
+        KStream<String, CpuUsage> sourceStream = builder.stream(stringSerde, cpuUsageSerde, "cpu-usage")
                 .map((k,v) -> new KeyValue<>(v.getNodeID(), v));
 
         KTable<Windowed<String>, CpuAggregator> aggregatedTable =
