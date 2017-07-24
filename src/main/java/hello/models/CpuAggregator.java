@@ -3,6 +3,7 @@ package hello.models;
 public class CpuAggregator {
     private String nodeID;
     private int count;
+    private int[] timeArray;
     private String startTimeStamp;
     private String endTimeStamp;
 
@@ -13,6 +14,9 @@ public class CpuAggregator {
     public CpuAggregator() {
         nodeID = "1";
         count = 0;
+        timeArray = new int[2];
+        timeArray[0] = -1;
+        timeArray[1] = -1;
         startTimeStamp = "";
         endTimeStamp = "";
     }
@@ -26,8 +30,13 @@ public class CpuAggregator {
     }
 
     public CpuAggregator add(CpuUsage value) {
-        if(startTimeStamp == "")
+        if (startTimeStamp == "")
             startTimeStamp = value.getTimestamp();
+        if (timeArray[0]==-1){
+            timeArray[0] = value.getTimeCounter();
+        }
+
+        timeArray[1]=value.getTimeCounter();
         endTimeStamp = value.getTimestamp();
         count = count + 1;
         return this;
