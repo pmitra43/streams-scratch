@@ -13,6 +13,9 @@ import org.apache.kafka.streams.kstream.*;
 import java.util.Properties;
 
 public class HelloKafkaStreams {
+    static int anomalyCondition = 80;
+    static int anomalyDuration = 10;
+
     public static void main(String[] args) {
         Properties settings = new Properties();
         settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "anomaly-kafka-streams");
@@ -22,8 +25,8 @@ public class HelloKafkaStreams {
         settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, "1000");
 
-        Predicate<String, CpuUsage> normalPredicate = (k, cpu) -> cpu.getCpu() <= 80;
-        Predicate<String, CpuUsage> anomalyPredicate = (k, cpu) -> cpu.getCpu() > 80;
+        Predicate<String, CpuUsage> normalPredicate = (k, cpu) -> cpu.getCpu() <= anomalyCondition;
+        Predicate<String, CpuUsage> anomalyPredicate = (k, cpu) -> cpu.getCpu() > anomalyCondition;
 
         JsonSerializer<CpuUsage> cpuUsageJsonSerializer = new JsonSerializer<>();
         JsonDeserializer<CpuUsage> cpuUsageJsonDeserializer = new JsonDeserializer<>(CpuUsage.class);
@@ -43,10 +46,10 @@ public class HelloKafkaStreams {
                 .map((k,v) -> new KeyValue<>(v.getNodeID(), v));
 
         KTable<Windowed<String>, CpuAggregator> aggregatedTable =
-        sourceStream.filter((k, v) -> v.getCpu() > 80)
+        sourceStream.filter((k, v) -> v.getCpu() > anomalyCondition)
                 .groupByKey(stringSerde, cpuUsageSerde)
                 .aggregate(CpuAggregator::new, (k,v,cpuAggregator)->cpuAggregator.add(v),
-                        TimeWindows.of(10*1000L).advanceBy(1000L),
+                        TimeWindows.of(anomalyDuration *1000L).advanceBy(1000L),
                         cpuAggregatorSerde, "AnomalyStore");
 
         aggregatedTable.toStream((window, v) -> v.getStartTimeStamp())
