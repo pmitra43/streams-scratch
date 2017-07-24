@@ -1,17 +1,21 @@
 package hello.models;
 
 public class CpuUsage {
+    private String cluster;
     private String nodeID;
     private String timestamp;
     private double cpu;
+    private int timeCounter;
 
-    public CpuUsage(){
+    public CpuUsage() {
 
     }
 
-    public CpuUsage(String nodeID, String timestamp, double cpu) {
+    public CpuUsage(String cluster, String nodeID, String timestamp, int timeCounter, double cpu) {
+        this.cluster = cluster;
         this.nodeID = nodeID;
         this.timestamp = timestamp;
+        this.timeCounter = timeCounter;
         this.cpu = cpu;
     }
 
@@ -37,5 +41,21 @@ public class CpuUsage {
 
     public void setCpu(double cpu) {
         this.cpu = cpu;
+    }
+
+    public String getCluster() {
+        return cluster;
+    }
+
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
+    }
+
+    public int getTimeCounter() {
+        return timeCounter;
+    }
+
+    public void setTimeCounter(int timeCounter) {
+        this.timeCounter = timeCounter;
     }
 }
