@@ -50,7 +50,7 @@ public class HelloKafkaStreams {
                 .groupByKey(stringSerde, cpuUsageSerde)
                 .aggregate(CpuAggregator::new, (k,v,cpuAggregator)->cpuAggregator.add(v),
                         TimeWindows.of(anomalyDuration *1000L).advanceBy(1000L),
-                        cpuAggregatorSerde, "AnomalyStore");
+                        cpuAggregatorSerde);
 
         aggregatedTable.toStream((window, v) -> v.getStartTimeStamp())
                 .through(Serdes.String(), cpuAggregatorSerde, "all-alerts")
