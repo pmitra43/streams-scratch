@@ -21,13 +21,13 @@ public class CpuAggregator {
         endTimeStamp = "";
     }
 
-
-    public CpuAggregator(String nodeID, int count, String startTimeStamp, String endTimeStamp) {
-        this.nodeID = nodeID;
-        this.count = count;
-        this.startTimeStamp = startTimeStamp;
-        this.endTimeStamp = endTimeStamp;
-    }
+//    public CpuAggregator(String nodeID, int count, String startTimeStamp, String endTimeStamp, int[] timeArray) {
+//        this.nodeID = nodeID;
+//        this.count = count;
+//        this.startTimeStamp = startTimeStamp;
+//        this.endTimeStamp = endTimeStamp;
+//        this.timeArray = timeArray;
+//    }
 
     public CpuAggregator add(CpuUsage value) {
         if (startTimeStamp == "")
@@ -35,7 +35,7 @@ public class CpuAggregator {
         if (timeArray[0]==-1){
             timeArray[0] = value.getTimeCounter();
         }
-
+        this.nodeID = value.getNodeID();
         timeArray[1]=value.getTimeCounter();
         endTimeStamp = value.getTimestamp();
         count = count + 1;
@@ -48,5 +48,13 @@ public class CpuAggregator {
 
     public String getEndTimeStamp() {
         return endTimeStamp;
+    }
+
+    public String getNodeID() {
+        return nodeID;
+    }
+
+    public void setNodeID(String nodeID) {
+        this.nodeID = nodeID;
     }
 }
