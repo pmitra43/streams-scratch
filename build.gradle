@@ -9,12 +9,12 @@ targetCompatibility = 1.8
 
 task runAnomalyDetectionKafkaStream(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
-    main = "anomalyDetector.AnomalyDetectionKafkaStreams"
+    mainClassName = "anomalyDetector.AnomalyDetectionKafkaStreams"
 }
 
 task runCpuAnomalyProcessorDriver(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
-    main = "anomalyDetector.CpuAnomalyFilterDriver"
+    mainClassName = "anomalyDetector.CpuAnomalyFilterDriver"
 }
 
 dependencies {
