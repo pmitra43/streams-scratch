@@ -1,6 +1,6 @@
-package hello.models;
+package anomalyDetector.models;
 
-public class CpuAggregator {
+public class AnomalyDetector {
     private String nodeID;
     private int count;
     private int[] timeArray;
@@ -11,7 +11,7 @@ public class CpuAggregator {
         return count;
     }
 
-    public CpuAggregator() {
+    public AnomalyDetector() {
         nodeID = "1";
         count = 0;
         timeArray = new int[2];
@@ -21,22 +21,16 @@ public class CpuAggregator {
         endTimeStamp = "";
     }
 
-//    public CpuAggregator(String nodeID, int count, String startTimeStamp, String endTimeStamp, int[] timeArray) {
-//        this.nodeID = nodeID;
-//        this.count = count;
-//        this.startTimeStamp = startTimeStamp;
-//        this.endTimeStamp = endTimeStamp;
-//        this.timeArray = timeArray;
-//    }
 
-    public CpuAggregator add(CpuUsage value) {
+    public AnomalyDetector add(CpuUsage value) {
+        this.nodeID = value.getNodeID();
         if (startTimeStamp == "")
             startTimeStamp = value.getTimestamp();
-        if (timeArray[0]==-1){
+        if (timeArray[0] == -1) {
             timeArray[0] = value.getTimeCounter();
         }
         this.nodeID = value.getNodeID();
-        timeArray[1]=value.getTimeCounter();
+        timeArray[1] = value.getTimeCounter();
         endTimeStamp = value.getTimestamp();
         count = count + 1;
         return this;
@@ -50,11 +44,11 @@ public class CpuAggregator {
         return endTimeStamp;
     }
 
-    public String getNodeID() {
-        return nodeID;
+    public String getNodeId() {
+        return this.nodeID;
     }
 
-    public void setNodeID(String nodeID) {
-        this.nodeID = nodeID;
+    public int[] getTimeArray() {
+        return this.timeArray;
     }
 }

@@ -1,7 +1,6 @@
-package hello;
+package anomalyDetector;
 
-import hello.models.CpuAggregator;
-import hello.models.CpuUsage;
+import anomalyDetector.models.*;
 import serializer.JsonDeserializer;
 import serializer.JsonSerializer;
 import org.apache.kafka.common.serialization.*;
@@ -12,7 +11,7 @@ import org.apache.kafka.streams.kstream.*;
 
 import java.util.Properties;
 
-public class HelloKafkaStreams {
+public class AnomalyDetectionKafkaStreams {
     static int anomalyCondition = 80;
     static int anomalyDuration = 10;
 
@@ -36,27 +35,26 @@ public class HelloKafkaStreams {
         Deserializer<String> stringDeserializer = new JsonDeserializer<>(String.class);
         Serde<String> stringSerde = Serdes.serdeFrom(stringSerializer, stringDeserializer);
 
-        Serializer<CpuAggregator> cpuAggregatorSerializer = new JsonSerializer<>();
-        Deserializer<CpuAggregator> cpuAggregatorJsonDeserializer = new JsonDeserializer<>(CpuAggregator.class);
-        Serde<CpuAggregator> cpuAggregatorSerde = Serdes.serdeFrom(cpuAggregatorSerializer, cpuAggregatorJsonDeserializer);
+        Serializer<AnomalyDetector> cpuAggregatorSerializer = new JsonSerializer<>();
+        Deserializer<AnomalyDetector> cpuAggregatorJsonDeserializer = new JsonDeserializer<>(AnomalyDetector.class);
+        Serde<AnomalyDetector> cpuAggregatorSerde = Serdes.serdeFrom(cpuAggregatorSerializer, cpuAggregatorJsonDeserializer);
 
         KStreamBuilder builder = new KStreamBuilder();
 
         KStream<String, CpuUsage> sourceStream = builder.stream(stringSerde, cpuUsageSerde, "cpu-usage")
-                .map((k,v) -> new KeyValue<>(v.getNodeID(), v));
+                .map((k, v) -> new KeyValue<>(v.getNodeID(), v));
 
-        KTable<Windowed<String>, CpuAggregator> aggregatedTable =
-        sourceStream.filter((k, v) -> v.getCpu() > anomalyCondition)
-                .groupByKey(stringSerde, cpuUsageSerde)
-                .aggregate(CpuAggregator::new, (k,v,cpuAggregator)->cpuAggregator.add(v),
-                        TimeWindows.of(anomalyDuration *1000L).advanceBy(1000L),
-                        cpuAggregatorSerde);
+        KTable<Windowed<String>, AnomalyDetector> aggregatedTable =
+                sourceStream.filter((k, v) -> v.getCpu() > anomalyCondition)
+                        .groupByKey(stringSerde, cpuUsageSerde)
+                        .aggregate(AnomalyDetector::new, (k, v, cpuAggregator) -> cpuAggregator.add(v),
+                                TimeWindows.of(anomalyDuration * 1000L).advanceBy(1000L),
+                                cpuAggregatorSerde);
 
         aggregatedTable.toStream((window, v) -> v.getStartTimeStamp())
                 .through(Serdes.String(), cpuAggregatorSerde, "all-alerts")
                 .filter((k, v) -> v.getCount() > 9)
-                .to(Serdes.String(), cpuAggregatorSerde, "actual-alert")
-        ;
+                .to(Serdes.String(), cpuAggregatorSerde, "actual-alert");
 
         KStream<String, CpuUsage>[] diffStreams = sourceStream.branch(anomalyPredicate, normalPredicate);
 
@@ -68,7 +66,6 @@ public class HelloKafkaStreams {
         kafkaStreams.cleanUp();
         kafkaStreams.start();
         System.out.println("Streaming started");
-
         Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
     }
 }

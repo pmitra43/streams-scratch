@@ -7,6 +7,16 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+task runAnomalyDetectionKafkaStream(type: JavaExec) {
+    classpath sourceSets.main.runtimeClasspath
+    main = "anomalyDetector.AnomalyDetectionKafkaStreams"
+}
+
+task runCpuAnomalyProcessorDriver(type: JavaExec) {
+    classpath sourceSets.main.runtimeClasspath
+    main = "anomalyDetector.CpuAnomalyFilterDriver"
+}
+
 dependencies {
     compile "joda-time:joda-time:2.2"
 
@@ -26,6 +36,4 @@ jar {
     baseName = 'kafka-stream-simple'
     version = '0.1.0'
 }
-
-mainClassName = 'hello.HelloKafkaStreams'
 
