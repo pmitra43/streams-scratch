@@ -1,8 +1,8 @@
 package anomalyDetector.models;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+import util.TimeFormatter;
+
+import java.util.Date;
 
 public class CpuAnomalyDetectorOutput {
     public String nodeId;
@@ -10,7 +10,6 @@ public class CpuAnomalyDetectorOutput {
     public long lastUpdatedTime;
     public String startTimeStamp;
     public String endTimeStamp;
-    static DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
 
     public static CpuAnomalyDetectorOutput fromAnomaly(AnomalyDetector cpuAggregator) {
         CpuAnomalyDetectorOutput cpuAnomalyDetectorOutput = new CpuAnomalyDetectorOutput();
@@ -23,8 +22,8 @@ public class CpuAnomalyDetectorOutput {
 
     public void update(AnomalyDetector cpuAggregator) {
 
-        LocalDateTime startDate = LocalDateTime.parse(cpuAggregator.getStartTimeStamp(), timeFormatter);
-        LocalDateTime endDate = LocalDateTime.parse(this.endTimeStamp, timeFormatter);
+        Date startDate = TimeFormatter.stringToDate(cpuAggregator.getStartTimeStamp());
+        Date endDate = TimeFormatter.stringToDate(this.endTimeStamp);
 
         if (endDate.compareTo(startDate) < 0) {
             this.timeArray = cpuAggregator.getTimeArray();
