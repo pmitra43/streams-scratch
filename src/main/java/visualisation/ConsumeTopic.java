@@ -27,10 +27,13 @@ public class ConsumeTopic {
         String topic = "cpu-usage";
         consumer.subscribe(Arrays.asList(topic));
 
+        InfluxDBDriver influxDBDriver = new InfluxDBDriver("http://127.0.0.1:8086", "consumer", "abcd1234");
+
         while (true){
-            ConsumerRecords<String, String> records = consumer.poll(100);
+            ConsumerRecords<String, String> records = consumer.poll(1000);
             for(ConsumerRecord<String,String> record: records) {
                 System.out.println(record.value());
+                influxDBDriver.writePoint("cluster1", record.value());
             }
         }
     }
