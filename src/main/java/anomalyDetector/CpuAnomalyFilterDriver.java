@@ -49,6 +49,5 @@ public class CpuAnomalyFilterDriver {
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, "1000");
         return props;
-
     }
 }

@@ -50,5 +50,4 @@ public class AnomalyFilter extends AbstractProcessor<String, AnomalyDetector> {
             }
         }
     }
-
 }

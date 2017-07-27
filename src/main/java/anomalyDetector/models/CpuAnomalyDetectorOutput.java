@@ -26,13 +26,13 @@ public class CpuAnomalyDetectorOutput {
         LocalDateTime startDate = LocalDateTime.parse(cpuAggregator.getStartTimeStamp(), timeFormatter);
         LocalDateTime endDate = LocalDateTime.parse(this.endTimeStamp, timeFormatter);
 
-        if (endDate.compareTo(startDate) <= 0) {
+        if (endDate.compareTo(startDate) < 0) {
             this.timeArray = cpuAggregator.getTimeArray();
             this.timeArray = cpuAggregator.getTimeArray();
             this.startTimeStamp = cpuAggregator.getStartTimeStamp();
             this.endTimeStamp = cpuAggregator.getEndTimeStamp();
+            this.lastUpdatedTime = System.currentTimeMillis();
         }
-        this.lastUpdatedTime = System.currentTimeMillis();
     }
 
     public boolean updatedWithinLastPublish(long lastPublishedTime) {
